@@ -1,0 +1,34 @@
+
+C compilation involves transforming human-readable C source code into machine-executable code in several stages.
+
+Preprocessing: 
+    Purpose:
+        Handles preprocessor directives (#include, #define, #ifdef, etc.)
+    
+    - Macro expansion
+    - Conditional compilation
+    - Header file inclusion
+    - Removal of comments
+    
+    Command: gcc -E hello.c -o hello.i
+
+Compilation: 
+    Purpose:
+        Converts preprocessed code into assembly code
+
+    - Assembly code (instructions) specific to the target processor architecture
+    
+    Command: gcc -S hello.i -o hello.s
+
+Assembly: 
+    Purpose:
+        Converts assembly code (instructions) to machine code (instructions) (object file)
+    
+    Command: gcc -c hello.s -o hello.o
+
+Linking:
+    Purpose:
+        Links object code with libraries (like libc) to create the final executable.
+        All the linking of function calls with their definitions are done
+
+    Command: gcc hello.o -o hello
