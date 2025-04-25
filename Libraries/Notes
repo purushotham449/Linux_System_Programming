@@ -1,0 +1,11 @@
+Quick Summary Table
+----------------------------------------------------------------------------------------------------
+
+Concept                 | Example                               | Meaning
+---------------------------------------------------------------------------------------------------------------
+Source .c               | add.c, mul.c, main.c                  | Human code
+Object .o               | add.o, mul.o, main.o                  | Machine code (not yet executable)
+Archive .a              | libarith.a                            | Grouped .o files (Compile-time linking)
+Shared Object .so       | libarith.so                           | Dynamically loadable library (Runtime linking)
+Binary (Executable)     | calculator, calculator_dynamic        | Final program
+ldd                     | ldd calculator_dynamic                | List libraries used at runtime
