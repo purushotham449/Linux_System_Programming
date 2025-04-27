@@ -1,0 +1,54 @@
+Before fork():
++---------+
+|  Parent  |
++---------+
+    |
+    |
+(fork)
+    |
+    +------> New Child (almost identical copy)
+
+After fork():
+  - Text (code) section: Shared (read-only)
+  - Heap, Stack, Data: Copied (Copy-on-Write)
+
+After exec():
+  - Child REPLACES its entire memory with a new program!
+
+
+Memory Area                 | fork() Result             | exec() Result
+--------------------------------------------------------------------------------------------------------
+
+Code                        | Shared (Read Only)        | Replaced
+Heap                        | Copied (COW)              | Replaced
+Stack                       | Copied (COW)              | Replaced
+File Descriptors            | Shared                    | Remain open (unless O_CLOEXEC)
+
+
+Summary
+
+Scenario                            | Sharing / Copying Behavior
+--------------------------------------------------------------------------------------------------------
+
+Local & Global Variables            | Copied (independent copies)
+File Descriptors (open files)       | Shared initially
+Read/Write using file desc.         | Affects both (same file table entry)
+pread()                             | Independent reads without affecting offset
+mmap()                              | Shared memory communication
+pipe()                              | Explicit IPC (Inter-Process Communication)
+
+Scenario                | How It Happens                            | Example
+--------------------------------------------------------------------------------------------------------
+
+Zombie                  | Child exits, parent doesn't wait          | Sleep in parent, no wait
+Synchronous             | Parent uses wait()                        | Parent waits for child to exit
+Asynchronous            | Child exit triggers SIGCHLD               | Parent handles SIGCHLD
+Child open() failure    | Wrong path/file open after fork           | Child tries to open bad file
+
+Topic                   |               Key Point
+--------------------------------------------------------------------------------------------------------
+
+Prevent zombie          |               SIGCHLD with SA_NOCLDWAIT
+Child dies first        |               Parent should wait()
+Parent dies first       |               Child reparented to init (PID 1)
+Normal fork()           |               File descriptors copied, memory copied (COW), CPU state copied
