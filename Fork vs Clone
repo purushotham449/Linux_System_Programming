@@ -1,0 +1,41 @@
+Feature                 | fork()                | clone()
+-----------------------------------------------------------------------------------------
+
+Memory Space            | Separate              | Shared if CLONE_VM
+File Descriptors        | Copied                | Shared if CLONE_FILES
+Signal Handlers         | Copied                | Shared if CLONE_SIGHAND
+PID Namespace           | Same                  | New if CLONE_NEWPID
+Threads                 | No                    | Yes (with CLONE_THREAD)
+Control                 | Minimal               | Full control
+Used For                | Processes             | Threads, Containers, Special processes           
+
+Feature                                    fork()          | clone()
+-----------------------------------------------------------------------------------------
+
+Simple, safe                               | ✅            | ❌ (need to set correct flags)
+Fine-grained sharing                       | ❌            | ✅
+Containers, namespaces, threads            | ❌            | ✅
+
+fork() vs clone() — Visual Comparison
+-----------------------------------------------------------------------------------------
+
+                  ┌──────────────────────┐
+                  │     Parent Process    │
+                  │  (PID 1000)            │
+                  │                        │
+                  │  Memory Space (M1)     │
+                  │  File Descriptors (FD1)│
+                  │  Signal Handlers (S1)  │
+                  └──────────┬─────────────┘
+                             │
+                ┌────────────┴─────────────┐
+                │                          │
+            (fork)                     (clone)
+                │                          │
+  ┌─────────────┴──────────────┐ ┌─────────┴──────────────────────┐
+  │  Child Process (PID 1001)   │ │  Child Process (PID 2001)       │
+  │                             │ │                                │
+  │  Memory Space (Copy of M1)   │ │  Memory Space (Shared with M1) │
+  │  File Descriptors (Copy of FD1) ││  File Descriptors (Shared FD1)│
+  │  Signal Handlers (Copy of S1) │ │  Signal Handlers (Shared S1)  │
+  └─────────────────────────────┘ └───────────────────────────────┘

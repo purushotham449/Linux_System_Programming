@@ -1,0 +1,72 @@
+
+What is clone() in Linux?
+
+    clone() is a more flexible and powerful version of fork().
+    It allows fine-grained control over what is shared between parent and child:
+
+        Memory
+        File descriptors
+        Signal handlers
+        Filesystem information
+        etc.
+
+    🛠️ With fork(), everything is copied (COW). With clone(), you choose what to share!
+
+clone() Function Prototype
+----------------------------------------------------------------------------------
+
+int clone(int (*fn)(void *), void *child_stack, int flags, void *arg, ...);
+
+Parameter           | Meaning
+----------------------------------------------------------------------------------
+
+fn                  | Function the child will execute
+child_stack         | Pointer to childs stack (you must allocate)
+flags               | What resources to share between parent and child
+arg                 | Argument passed to fn
+
+Important clone() Flags
+
+Flag                    | Meaning
+----------------------------------------------------------------------------------
+
+CLONE_VM                | Share memory space (like threads)
+CLONE_FS                | Share filesystem info (cwd, umask)
+CLONE_FILES             | Share file descriptors
+CLONE_SIGHAND           | Share signal handlers
+CLONE_THREAD            | Parent and child are in the same thread group
+CLONE_PARENT            | Child has same parent as the caller
+CLONE_NEWNS             | New mount namespace (filesystem isolation)
+CLONE_NEWPID            | New PID namespace (child sees itself as PID 1)
+CLONE_NEWUTS            | New hostname/domain namespace
+
+Scenario                    | Important Flags           | Behavior
+----------------------------------------------------------------------------------
+
+Normal fork-like clone      | SIGCHLD only              | Separate memory, separate FDs
+Shared memory               | CLONE_VM                  | Both modify same memory
+Shared file descriptors     | CLONE_FILES               | Closing fd in one closes for both
+Threads                     | CLONE_VM                 | CLONE_FS
+IPC                         | Use pipe() manually       | Data transfer between parent and child
+
+Scenario                |       Highlights
+----------------------------------------------------------------------------------
+
+Manual Threads          |       Share memory, file desc, signal handlers
+clone + pipe            |       Communication between parent-child
+clone zombie            |       No wait ➔ child becomes zombie
+
+Method                              | IPC / Memory sharing
+----------------------------------------------------------------------------------
+
+clone() + manual threads            | Shared memory (local variables)
+clone() + pipe()                    | Communication via file descriptors
+clone() + mmap()                    | Communication via shared memory
+clone() + no wait                   | Creates zombie/orphan
+
+Without CLONE_VM:
+ Parent (stack) — separate
+ Child (stack) — separate
+
+With CLONE_VM:
+ Parent (stack) ↔ Child (stack)  (shared)
