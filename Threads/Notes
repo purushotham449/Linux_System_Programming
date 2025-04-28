@@ -1,0 +1,90 @@
+------------------------------------------------------------------------------------------------
+                                        POSIX Threads
+------------------------------------------------------------------------------------------------
+
+
+✅ pthread stands for POSIX thread — it’s the standard for creating and managing threads in C on Unix/Linux systems.
+✅ pthread is the standard C API for creating and managing threads within a single process.
+✅ Threads created with pthread:
+
+    Share the same address space.
+    Share the same heap, global variables, file descriptors.
+    Have their own separate stack.
+
+✅ Threads allow parallelism (multi-tasking inside the same process).
+
+Function                    | Purpose
+------------------------------------------------------------------------------------------------
+
+pthread_create()            | Create a new thread
+pthread_join()              | Wait for a thread to terminate (synchronous)
+pthread_exit()              | Terminate the calling thread
+pthread_detach()            | Detach a thread (no join)
+pthread_mutex_*()           | Locking and unlocking mutexes
+pthread_cond_*()            | Condition variables (for signaling between threads)
+
+Key Points in pthread
+
+Topic                       | Notes
+------------------------------------------------------------------------------------------------
+
+Sharing data                | Be careful! Use mutex to protect shared data.
+Deadlock                    | If you lock but forget to unlock → stuck forever!
+Detached threads            | If you don't need to join, call pthread_detach().
+Thread-safe programming     | Mutex, Condition variables, Read-Write locks are important.
+Cancellation                | Threads can be cancelled with pthread_cancel(), but carefully.
+
+Single Process, Multiple Threads
+------------------------------------------------------------------------------------------------
++------------------------+
+|  Main Thread            |
+|  (Global Memory)        |
++----------+--------------+
+           |
+    +------v-------+     +------v-------+
+    | Thread 1     |     | Thread 2     |
+    | (Separate Stack)   | (Separate Stack) |
+    +-----------------+ +-----------------+
+           |
+    (Shared Heap, Globals, FDs)
+
+
+Summary Table
+------------------------------------------------------------------------------------------------
+Scenario                    | Behavior
+------------------------------------------------------------------------------------------------
+
+Create Thread               | pthread_create()
+Synchronous Wait            | pthread_join()
+Asynchronous (No Wait)      | pthread_detach()
+Mutex Protection            | pthread_mutex_*()
+Pipe Communication          | pipe(), read(), write()
+File Descriptors            | Shared
+Globals/Heap                | Shared
+Zombie Thread               | If not joined or detached
+
+Problem with Asynchronous Signal Handling
+------------------------------------------------------------------------------------------------
+
+    In normal programs, signal(SIGINT, handler) is OK.
+
+    But in multi-threaded programs:
+
+        Signal may go to any random thread that hasn't blocked it.
+        If multiple threads receive signals asynchronously → very hard to manage.
+
+✅ Solution:
+------------------------------------------------------------------------------------------------
+
+Use sigwait() or sigwaitinfo() inside a dedicated thread to synchronously wait for signals and handle them safely.
+
+FIFO vs RR Quick Comparison
+------------------------------------------------------------------------------------------------
+
+Aspect                          | SCHED_FIFO                                | SCHED_RR
+------------------------------------------------------------------------------------------------
+
+Scheduling                      | Strict by priority                        | Priority + Timeslice
+Lower priority chance?          | No                                        | Yes, if equal priority
+Preemption                      | Only if higher priority appears           | Same-priority preemption by time quantum
+Example                         | One thread runs completely first          | Threads alternate
