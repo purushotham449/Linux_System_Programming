@@ -1,0 +1,86 @@
+Conclusion:
+
+    Pipes: 
+        Simple communication between related processes.
+
+    Named Pipes (FIFOs): 
+        ommunication between unrelated processes.
+
+    Message Queues: 
+        Allows message-based communication with message types.
+
+    Shared Memory: 
+        Provides fast, low-level communication by allowing processes to access the same memory region.
+
+    Semaphores: 
+        Useful for synchronization between processes, ensuring mutual exclusion
+
+
+Main IPC Mechanisms
+------------------------------------------------------------------------------------------------
+
+IPC Type | Use Case | Typical Example
+------------------------------------------------------------------------------------------------
+
+Pipes               | Parent → child data passing              | fork(), then pipe() between them
+Named Pipes (FIFO)  | Unrelated processes talking              | Two different programs sharing a FIFO file
+Message Queues      | Send structured messages                 | Send multiple messages with priority
+Shared Memory       | Share big data fast between processes    | Multiple processes access same memory
+Semaphores          | Synchronization (locking)                | Control access to critical resources
+
+
+In Very Simple Words
+------------------------------------------------------------------------------------------------
+
+Concept             | Like...                   | Example
+------------------------------------------------------------------------------------------------
+
+Pipe                | One-way talking tube      | Parent says "Hello" to child
+Named Pipe (FIFO)   | Mailbox everyone can use  | Sender drops, receiver picks up
+Message Queue       | Post office               | Different types of mail in queue
+Shared Memory       | Shared blackboard         | Everyone reads/writes on it
+Semaphore           | Traffic light             | Only one can cross at a time
+
+
+IPC Diagram: Processes and Communication
+------------------------------------------------------------------------------------------------
+
+          [ Process A ]             [ Process B ]
+               |                          |
+               |                          |
+         ┌────────────────────────────────────┐
+         │           IPC Mechanisms            │
+         └────────────────────────────────────┘
+               |                          |
+               |                          |
+ +----------------------------------------------------------+
+ |                                                          |
+ | 1. PIPE (Anonymous)                                       |
+ |    A ➔ B (one-way data)                                   |
+ |                                                          |
+ | 2. FIFO (Named Pipe)                                      |
+ |    A ➔ FIFO file ➔ B                                      |
+ |                                                          |
+ | 3. MESSAGE QUEUE                                          |
+ |    A ➔ Kernel Message Queue ➔ B                           |
+ |                                                          |
+ | 4. SHARED MEMORY                                          |
+ |    A ⇄ Shared Memory ⇄ B                                  |
+ |    (Needs Semaphore for safety)                          |
+ |                                                          |
+ | 5. SEMAPHORE (Sync mechanism)                             |
+ |    - Process A "locks" resource.                         |
+ |    - Process B "waits" until A "unlocks" resource.        |
+ +----------------------------------------------------------+
+
+Summary Table
+-----------------------------------------------------------------------------------------------------
+
+IPC Type        | Data Flow             | Who manages it?       | Need extra sync?      | Fast?
+-----------------------------------------------------------------------------------------------------
+
+Pipe            | One-way               | Kernel                | No                    | Medium
+FIFO            | One-way (named)       | Kernel/filesystem     | No                    | Medium
+Message Queue   | Structured messages   | Kernel                | No                    | Medium
+Shared Memory   | Memory sharing        | User space            | Yes (Semaphore)       | Very Fast
+Semaphore       | Sync only (no data)   | User space            | -                     | Fast

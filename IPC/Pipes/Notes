@@ -1,0 +1,3 @@
+Before using FIFOs, the FIFO file must be created using mkfifo or mknod (or using open() if it doesn't exist).
+
+FIFO allows communication between unrelated processes by referencing the FIFO path
