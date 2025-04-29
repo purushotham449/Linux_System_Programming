@@ -1,0 +1,194 @@
+Full Flow
+----------------------------------------------------------------------------------------
+
+[Userspace]
+    |
+    | fork() --> syscall
+    v
+[ syscall entry in assembly ]
+    |
+    | → syscall table lookup
+    v
+[Kernelspace]
+    kernel_clone() → copy_process()
+    |
+    | → Create PCB (alloc_task_struct())
+    | → setup memory layout
+    | → assign PID
+    | → setup files/signals
+    v
+task_struct ready → add to scheduler
+    v
+[Userspace]
+    - Child process starts
+    - Executes code
+    |
+    | exec() (optional) --> syscall
+    v
+[Kernelspace]
+    - Replace memory segments
+    - Update PCB
+    |
+    v
+[Userspace]
+    - Runs new program
+    - Does work (syscalls for IO, etc.)
+    |
+    | exit() --> syscall
+    v
+[Kernelspace]
+    - Free memory
+    - Mark PCB as zombie
+    - Send SIGCHLD to parent
+    |
+    v
+[Userspace Parent]
+    - wait()
+    |
+    v
+[Kernelspace]
+    - Remove PCB
+    - Full cleanup done
+
+
+Detail Explanation
+----------------------------------------------------------------------------------------
+
+1. Userspace Application Requests a New Process
+
+    pid_t pid = fork();
+    This triggers a system call (fork syscall) → transition from Userspace to Kernelspace.
+
+    Userspace → Kernelspace Transition:
+
+        CPU switches from user mode to kernel mode.
+        Kernel starts handling the request.
+
+2. Kernel Creates the New Process
+
+    Inside the Kernel:
+
+    PCB (Process Control Block) is allocated (task_struct).
+
+        Assigns a new PID.
+        Initializes fields like state = READY, open file table, signal handlers.
+
+    Memory Segmentation is setup:
+
+        Text, Data, BSS, Heap, Stack are copy-on-write cloned from parent.
+        No actual copy yet — just page table entries.
+
+    Process Management:
+
+        New process added to scheduler's runqueue.
+        It’s now ready to be scheduled onto the CPU.
+
+3. New Process Starts Running
+
+    When the CPU schedules the new process:
+
+    Userspace → Kernelspace transition back:
+
+        CPU returns to user mode.
+        New process starts execution (appears like fork() returns 0 in child).
+
+    The new process has its own memory segmentation:
+
+        Text segment (shared, read-only)
+        Private Data, BSS
+        Private Stack
+        Expandable Heap
+
+4. Optional: Replace Memory Image with exec()
+
+    execlp("ls", "ls", NULL);
+    Again, Userspace → Kernelspace via syscall.
+
+    Inside Kernel:
+
+        Destroys current memory segments (text, data, heap, stack).
+        Loads new program’s segments from disk.
+        PCB is reused — only memory mapping changes.
+        Back to Userspace, running the new program.
+
+5. Process Executes Normally in Userspace
+
+    It keeps running in userspace.
+
+    Makes syscalls (e.g., read(), write(), open()).
+
+    Kernel keeps track via the PCB:
+
+        CPU registers
+        Open files
+        Memory maps
+        Scheduling info
+
+6. Process Terminates
+
+    exit(0);
+    return 0;
+
+    Userspace → Kernelspace transition occurs (exit syscall).
+
+    Inside Kernel:
+
+        Updates PCB:
+
+            Marks process as EXIT_ZOMBIE.
+            Sends SIGCHLD signal to parent.
+
+        Memory Segments are released:
+
+            Heap, stack, data, etc., deallocated.
+
+        File descriptors are closed.
+
+        Process is removed from scheduler (cannot run again).
+
+7. Zombie Phase & Cleanup
+
+    Process becomes a Zombie: a dead body with PCB alive.
+    Parent must call wait() or waitpid() to collect its exit status.
+    wait(NULL);
+
+    After parent reads child status:
+    Kernel removes the PCB.
+    Fully frees process slot.
+
+
+Linux kernel has a syscall table, which maps syscall numbers to kernel functions:
+
+Syscall         Number          Kernel Function 
+--------------------------------------------------------------------------------------
+
+fork()          57              kernel_clone() (modern Linux uses clone() internally) 
+exit()          60              do_exit()     
+read()          0               ksys_read() → vfs_read() 
+write()         1               ksys_write() → vfs_write() 
+open()          2               ksys_openat() (via openat() syscall) → do_sys_open() 
+
+
+Syscall       Kernel Path 
+--------------------------------------------------------------------------------------
+
+read()        → ksys_read()       → vfs_read()      → file_ops->read()
+write()       → ksys_write()      → vfs_write()     → file_ops->write()
+open()        → ksys_openat()     → do_sys_open()   → do_filp_open()
+
+What’s in the PCB (struct task_struct)?
+--------------------------------------------------------------------------------------
+
+    Here’s what’s populated during process creation (copy_process()):
+
+Field                  Purpose                                
+------------------    ----------------------------------------------------------------
+pid, tgid              Process and thread group IDs           
+state                  TASK_RUNNING, TASK_SLEEPING, etc.  
+mm                     Memory descriptor (code, data, stack)  
+files                  Open file table                        
+signal                 Signal handlers                        
+cred                   UID, GID, capabilities                 
+sched                  Scheduling priority, runtime info      
+thread                 CPU state, registers, stack pointer    
+parent, children       Process hierarchy                      
